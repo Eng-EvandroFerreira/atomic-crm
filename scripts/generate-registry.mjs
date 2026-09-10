@@ -2,14 +2,16 @@
 
 import { globSync } from "glob";
 import fs from "node:fs";
-import path from "node:path";
 
 const registryPath = "registry.json";
 const basePath = "src";
-const atomicCrmComponentsPath = path.join(basePath, "components", "atomic-crm");
-const supabaseComponentsPath = path.join(basePath, "components", "supabase");
-const hooksPath = path.join(basePath, "hooks");
-const libPath = path.join(basePath, "lib");
+// `glob` patterns must use forward slashes on every platform. Using
+// `path.join()` here produces backslashes on Windows, which makes the glob
+// silently match no components and truncates the generated registry.
+const atomicCrmComponentsPath = `${basePath}/components/atomic-crm`;
+const supabaseComponentsPath = `${basePath}/components/supabase`;
+const hooksPath = `${basePath}/hooks`;
+const libPath = `${basePath}/lib`;
 
 const excludedHooks = [
   "filter-context.tsx",
@@ -28,20 +30,20 @@ const excludedLibFiles = [
 
 const testFilePattern = "**/*.{test,spec}.*";
 const storyFilePattern = "**/*.stories.*";
+const toPosixPath = (filePath) => filePath.replaceAll("\\", "/");
+const getBasename = (filePath) => toPosixPath(filePath).split("/").at(-1);
 
-const atomicCrmComponents = globSync(
-  path.join(atomicCrmComponentsPath, "**", "*.ts*"),
-  { ignore: [testFilePattern, storyFilePattern] },
-);
-const supabaseComponents = globSync(
-  path.join(supabaseComponentsPath, "**", "*.ts*"),
-  { ignore: [testFilePattern, storyFilePattern] },
-);
-const hooks = globSync(path.join(hooksPath, "**", "*.ts*")).filter((hook) => {
-  return !excludedHooks.includes(path.basename(hook));
+const atomicCrmComponents = globSync(`${atomicCrmComponentsPath}/**/*.ts*`, {
+  ignore: [testFilePattern, storyFilePattern],
+}).map(toPosixPath);
+const supabaseComponents = globSync(`${supabaseComponentsPath}/**/*.ts*`, {
+  ignore: [testFilePattern, storyFilePattern],
+}).map(toPosixPath);
+const hooks = globSync(`${hooksPath}/**/*.ts*`).filter((hook) => {
+  return !excludedHooks.includes(getBasename(hook));
 });
-const libFiles = globSync(path.join(libPath, "**", "*.ts*")).filter((file) => {
-  return !excludedLibFiles.includes(path.basename(file));
+const libFiles = globSync(`${libPath}/**/*.ts*`).filter((file) => {
+  return !excludedLibFiles.includes(getBasename(file));
 });
 const changelogPath = "CHANGELOG.md";
 
@@ -60,13 +62,13 @@ const files = [
       type: "registry:component",
     };
   }),
-  ...hooks.map((path) => {
+  ...hooks.map(toPosixPath).map((path) => {
     return {
       path,
       type: "registry:hook",
     };
   }),
-  ...libFiles.map((path) => {
+  ...libFiles.map(toPosixPath).map((path) => {
     return {
       path,
       type: "registry:lib",

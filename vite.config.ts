@@ -4,7 +4,6 @@ import path from "node:path";
 import { visualizer } from "rollup-plugin-visualizer";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
-import createHtmlPlugin from "vite-plugin-simple-html";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -18,14 +17,6 @@ export default defineConfig({
     visualizer({
       open: process.env.NODE_ENV !== "CI",
       filename: "./dist/stats.html",
-    }),
-    createHtmlPlugin({
-      minify: true,
-      inject: {
-        data: {
-          mainScript: `src/main.tsx`,
-        },
-      },
     }),
     VitePWA({
       registerType: "autoUpdate",
